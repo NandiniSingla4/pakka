@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Keep Pakka's single-page experience composed from focused landing components with editable copy and sample workspace data in `src/lib/landing-content.ts`; this allows the demo to be replaced with live analysis later without changing the presentation structure.
+- Keep sample-order messages, field evidence IDs, and change history together in editable landing content; this keeps the workspace presentation independent from future analysis data sources.
