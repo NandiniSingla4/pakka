@@ -78,10 +78,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Pakka — Seller-verified order checks" },
+      { title: "Pakka: Seller-verified order checks" },
       { name: "description", content: "Explore seller-verified order checks with message evidence for custom orders." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Pakka — Seller-verified order checks" },
+      { property: "og:title", content: "Pakka: Seller-verified order checks" },
       { property: "og:description", content: "Explore seller-verified order checks with message evidence for custom orders." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
