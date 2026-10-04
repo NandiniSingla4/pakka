@@ -6,7 +6,7 @@ import { ConversationMotif } from "./ConversationMotif";
 export function Hero() {
   return <section id="overview" className="relative scroll-mt-16 overflow-hidden bg-porcelain px-4 pb-8 pt-9 sm:px-8 sm:pb-10 sm:pt-11">
     <MessageCircle aria-hidden="true" className="pointer-events-none absolute right-5 top-8 size-12 text-coral-soft sm:right-10 lg:hidden" strokeWidth={1.5} />
-    <div className="absolute right-[7%] top-7 hidden opacity-70 lg:block"><ConversationMotif /></div>
+    <div className="absolute right-[7%] top-7 hidden opacity-70 xl:block"><ConversationMotif /></div>
     <div className="relative mx-auto max-w-6xl">
       <div className="rise-in inline-flex items-center gap-2 rounded-full border border-primary/15 bg-card px-3 py-1.5 text-[11px] font-bold text-primary shadow-sm"><span className="size-2 rounded-full bg-coral" />{hero.badge}</div>
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.65fr)] lg:items-end lg:gap-12">
