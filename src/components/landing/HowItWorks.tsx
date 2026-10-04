@@ -12,7 +12,7 @@ export function HowItWorks() {
         </h2>
         <ol className="mt-12 grid gap-6 md:grid-cols-3">
           {steps.map((step, i) => {
-            const Icon = icons[i];
+            const Icon = icons[i]!;
             return (
               <li
                 key={step.title}
