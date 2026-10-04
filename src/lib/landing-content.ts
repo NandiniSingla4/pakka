@@ -123,12 +123,12 @@ export const audiences = [
   { icon: "gem", label: "Jewellery" }, { icon: "pen", label: "Designers" },
 ];
 export const trust = {
-  headline: "AI interprets. You decide.",
-  body: "Pakka surfaces uncertainty instead of hiding it. Every conclusion stays visible, checkable and editable by the seller.",
+  headline: "You’re in control.",
+  body: "Pakka surfaces uncertainty instead of hiding it. Review before you lock it: every conclusion stays visible and checkable, and the seller has the final say.",
   privacy: ["Identifiers can be removed before analysis", "Raw conversations do not need to be stored permanently", "Text-only MVP; no customer photos required"],
 };
 export const earlyAccess = {
-  headline: "Ever scrolled back through a customer chat before starting the order?",
+  headline: "Made something custom? Pakka should feel like your second pair of eyes.",
   copy: "We're looking for custom sellers willing to test Pakka on real, anonymised conversations and tell us where it gets things right — and where it gets things wrong.",
   cta: "Join early access",
 };
