@@ -8,8 +8,9 @@ export const Route = createFileRoute("/api/stats")({
         try {
           return Response.json(await getStats(), { headers: { "Cache-Control": "no-store" } });
         } catch (error) {
-          console.error(error);
-          return Response.json({ error: "unavailable" }, { status: 503 });
+          console.warn("stats unavailable:", error instanceof Error ? error.message : error);
+          // Stats are optional; the UI hides the line when they are unavailable.
+          return Response.json({ available: false }, { headers: { "Cache-Control": "no-store" } });
         }
       },
     },
