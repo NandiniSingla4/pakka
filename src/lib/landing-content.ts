@@ -40,7 +40,7 @@ export const sampleOrders: SampleOrder[] = [
       { id: 5, from: "seller", text: "Done, A4 works." },
       { id: 6, from: "customer", text: "And beige instead of blue for the background?" },
       { id: 7, from: "seller", text: "Yes, beige background it is." },
-      { id: 8, from: "customer", text: "Need it by 12 Oct — possible?" },
+      { id: 8, from: "customer", text: "Need it by 12 Oct. Is that possible?" },
       { id: 9, from: "customer", text: "Digital file is fine." },
       { id: 10, from: "seller", text: "Great, digital file it is." },
       { id: 11, from: "customer", text: "Can I send the photos tomorrow?" },
@@ -129,6 +129,6 @@ export const trust = {
 };
 export const earlyAccess = {
   headline: "Made something custom? Pakka should feel like your second pair of eyes.",
-  copy: "We're looking for custom sellers willing to test Pakka on real, anonymised conversations and tell us where it gets things right — and where it gets things wrong.",
+  copy: "We're looking for custom sellers willing to test Pakka on real, anonymised conversations and tell us where it gets things right, and where it gets things wrong.",
   cta: "Join early access",
 };

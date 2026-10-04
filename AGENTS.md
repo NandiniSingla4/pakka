@@ -12,3 +12,4 @@
 - Keep Pakka's single-page experience composed from focused landing components with editable copy and sample workspace data in `src/lib/landing-content.ts`; this allows the demo to be replaced with live analysis later without changing the presentation structure.
 - Keep sample-order messages, field evidence IDs, and change history together in editable landing content; this keeps the workspace presentation independent from future analysis data sources.
 - Use semantic color tokens and a single global visual system for the landing and demo surfaces; this keeps interactive statuses and future live results visually consistent.
+- Keep decorative conversation-to-order motifs in a shared presentation component; this connects visual accents to evidence verification without duplicating decoration logic.
