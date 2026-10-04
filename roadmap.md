@@ -1,3 +1,4 @@
-# Pakka interactive redesign
-- [x] Make three sample orders drive a split conversation/order workspace with persistent linked evidence and a separate Changes view.
-- [x] Tighten hero and supporting content; verify mobile, tablet and desktop interactions.
+# Pakka future-first redesign
+- [ ] Replace the warm editorial identity with a high-contrast digital visual system and compact navigation/hero.
+- [ ] Rework the sample-order workspace with linked evidence, status filters, responsive views, and separate Changes.
+- [ ] Restyle the supporting content and move early access into a compact modal; verify interactions at phone, tablet, and desktop sizes.
