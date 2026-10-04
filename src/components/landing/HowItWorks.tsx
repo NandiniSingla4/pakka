@@ -5,34 +5,17 @@ const icons = [ClipboardPaste, ScanSearch, LockKeyhole] as const;
 
 export function HowItWorks() {
   return (
-    <section className="px-5 py-16 sm:px-8 md:py-24">
-      <div className="mx-auto max-w-5xl">
-        <h2 className="text-center text-3xl font-semibold text-foreground sm:text-4xl">
-          How Pakka works
-        </h2>
-        <ol className="mt-12 grid gap-6 md:grid-cols-3">
+    <section id="how-it-works" className="scroll-mt-20 border-y border-border bg-secondary/35 px-5 py-10 sm:px-8">
+      <div className="mx-auto max-w-6xl">
+        <h2 className="text-xl font-semibold text-foreground sm:text-2xl">How it works</h2>
+        <ol className="relative mt-6 grid gap-5 md:grid-cols-3 md:gap-8">
           {steps.map((step, i) => {
-            const Icon = icons[i]!;
+            const Icon = icons[i] ?? ClipboardPaste;
             return (
-              <li
-                key={step.title}
-                className="relative rounded-3xl border border-border bg-card p-6 shadow-sm"
-              >
-                <span
-                  aria-hidden="true"
-                  className="absolute -top-3 left-6 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground"
-                >
-                  {i + 1}
-                </span>
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-secondary text-foreground">
-                  <Icon className="h-5 w-5" strokeWidth={2} />
-                </span>
-                <h3 className="mt-4 text-lg font-semibold text-foreground">
-                  {step.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {step.description}
-                </p>
+              <li key={step.title} className="relative flex items-start gap-3 border-l border-primary/30 pl-4 md:border-l-0 md:border-t md:pl-0 md:pt-5">
+                <span className="absolute -left-3 top-0 flex size-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground md:-top-3 md:left-0">{i + 1}</span>
+                <Icon className="mt-0.5 size-5 shrink-0 text-primary md:ml-1" />
+                <div><h3 className="text-sm font-semibold text-foreground">{step.title}</h3><p className="mt-1 text-xs leading-relaxed text-muted-foreground sm:text-sm">{step.description}</p></div>
               </li>
             );
           })}

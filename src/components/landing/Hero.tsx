@@ -1,135 +1,42 @@
-import {
-  ArrowDown,
-  Check,
-  MessageCircle,
-  CircleDashed,
-  CircleQuestionMark,
-} from "lucide-react";
-import { hero, demoFields, demoChanges } from "@/lib/landing-content";
+import { ArrowRight, MessageCircle, ArrowUpRight, Sparkle } from "lucide-react";
+import { hero } from "@/lib/landing-content";
 import { StatusBadge } from "./StatusBadge";
-
-function ChatBubble({ text }: { text: string }) {
-  return (
-    <div className="flex justify-end">
-      <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-secondary px-3.5 py-2 text-[13px] leading-snug text-secondary-foreground">
-        {text}
-      </p>
-    </div>
-  );
-}
-
-function MiniOrderCheck() {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Check className="h-3.5 w-3.5" strokeWidth={3} />
-        </span>
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Pakka Order Check
-        </p>
-      </div>
-      <ul className="space-y-2.5">
-        <li className="flex items-center justify-between gap-2">
-          <span className="text-sm text-muted-foreground">Size</span>
-          <span className="flex items-center gap-2">
-            <span className="text-sm font-semibold">A4</span>
-            <StatusBadge status="agreed" />
-          </span>
-        </li>
-        <li className="flex items-center justify-between gap-2">
-          <span className="text-sm text-muted-foreground">Deadline</span>
-          <span className="flex items-center gap-2">
-            <span className="text-sm font-semibold">12 Oct</span>
-            <StatusBadge status="open" />
-          </span>
-        </li>
-        <li className="flex items-center justify-between gap-2">
-          <span className="text-sm text-muted-foreground">Revisions</span>
-          <StatusBadge status="missing" />
-        </li>
-      </ul>
-      <div className="mt-3 rounded-xl bg-changed-soft px-3 py-2">
-        <p className="text-[11px] font-semibold text-changed">
-          Changes detected: Size A3 → A4
-        </p>
-      </div>
-    </div>
-  );
-}
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden px-5 pb-16 pt-10 sm:px-8 md:pb-24 md:pt-16">
-      <div className="mx-auto max-w-6xl">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          <div className="rise-in">
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-              {hero.badge}
-            </span>
-            <h1 className="mt-5 text-balance text-4xl font-semibold leading-[1.08] text-foreground sm:text-5xl lg:text-[3.4rem]">
-              {hero.headline}
-            </h1>
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
-              {hero.subheadline}
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a
-                href="#order-check"
-                className="inline-flex items-center justify-center rounded-full bg-primary px-7 py-3.5 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              >
-                {hero.primaryCta}
-              </a>
-              <a
-                href="#early-access"
-                className="inline-flex items-center justify-center rounded-full border border-border bg-card px-7 py-3.5 text-base font-semibold text-foreground transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              >
-                {hero.secondaryCta}
-              </a>
-            </div>
-          </div>
-
-          {/* Mockup: messy chat → clean Order Check */}
-          <div className="rise-in flex flex-col items-stretch gap-3 [animation-delay:150ms] sm:flex-row sm:items-center sm:gap-5">
-            <div className="min-w-0 flex-1 rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <div className="mb-3 flex items-center gap-2 text-muted-foreground">
-                <MessageCircle className="h-4 w-4" />
-                <p className="text-xs font-medium">Customer chat</p>
-              </div>
-              <div className="space-y-2">
-                <ChatBubble text="Can we do A3? 🙂" />
-                <ChatBubble text="Actually A4." />
-                <ChatBubble text="Need it by Friday." />
-                <ChatBubble text="I’ll confirm the background." />
-                <ChatBubble text="Same price as before?" />
-              </div>
-            </div>
-
-            <div
-              aria-hidden="true"
-              className="self-center flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm"
-            >
-              <ArrowDown className="h-4 w-4 sm:-rotate-90" />
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <MiniOrderCheck />
-            </div>
+    <section id="overview" className="scroll-mt-16 px-5 pb-12 pt-10 sm:px-8 lg:py-16">
+      <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14">
+        <div className="rise-in">
+          <p className="inline-flex items-center gap-2 text-xs font-bold uppercase text-primary"><span className="size-2 rounded-full bg-primary" /> {hero.badge}</p>
+          <h1 className="mt-4 max-w-xl font-display text-[2.35rem] font-semibold leading-[1.12] text-foreground sm:text-5xl lg:text-[3.25rem]">{hero.headline}</h1>
+          <p className="mt-5 max-w-md text-base leading-relaxed text-muted-foreground sm:text-lg">{hero.subheadline}</p>
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            <a href="#try-pakka" className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-ring">{hero.primaryCta} <ArrowUpRight className="size-4" /></a>
+            <a href="#how-it-works" className="inline-flex min-h-11 items-center rounded-md border border-border bg-card px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-ring">{hero.secondaryCta}</a>
           </div>
         </div>
-
-        {/* Status legend */}
-        <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-2">
-            <Check className="h-4 w-4 text-agreed" /> Agreed — clearly settled
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <CircleDashed className="h-4 w-4 text-open" /> Open — discussed, not settled
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <CircleQuestionMark className="h-4 w-4 text-missing" /> Missing — never discussed
-          </span>
+        <div className="rise-in min-w-0 [animation-delay:100ms]">
+          <p className="mb-3 text-xs font-semibold uppercase text-muted-foreground">From conversation to clarity</p>
+          <div className="grid grid-cols-[minmax(0,1fr)_26px_minmax(0,1.25fr)] items-center gap-1.5 sm:gap-3">
+            <div className="min-w-0 overflow-hidden rounded-md border border-border bg-card shadow-sm">
+              <div className="flex items-center gap-1.5 border-b border-border bg-secondary/60 px-2.5 py-2.5 text-[10px] font-semibold sm:px-3 sm:text-xs"><MessageCircle className="size-3.5 shrink-0 text-primary" /> Customer chat</div>
+              <div className="space-y-2 px-2 py-3 text-[10px] leading-snug sm:px-3 sm:text-xs">
+                <p className="w-fit max-w-full rounded-md bg-secondary px-2 py-1.5">Can we do A3?</p>
+                <p className="ml-auto w-fit max-w-full rounded-md bg-primary/10 px-2 py-1.5">Sure!</p>
+                <p className="w-fit max-w-full rounded-md bg-secondary px-2 py-1.5">Actually A4.</p>
+                <p className="w-fit max-w-full rounded-md bg-secondary px-2 py-1.5">Need it by 12 Oct?</p>
+                <p className="w-fit max-w-full rounded-md bg-secondary px-2 py-1.5">Revisions…?</p>
+              </div>
+            </div>
+            <span aria-hidden="true" className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground"><ArrowRight className="size-3.5" /></span>
+            <div className="min-w-0 overflow-hidden rounded-md border border-border bg-card shadow-md">
+              <div className="flex items-center gap-1.5 border-b border-border bg-card px-2 py-2.5 text-[10px] font-bold sm:px-3 sm:text-xs"><Sparkle className="size-3.5 shrink-0 text-primary" /> Pakka Order Check</div>
+              <div className="divide-y divide-border px-2 sm:px-3">
+                {([{label: "Size", value: "A4", status: "agreed"}, {label: "Deadline", value: "12 Oct requested", status: "open"}, {label: "Revisions", value: "—", status: "missing"}] as const).map((item) => <div key={item.label} className="py-2"><span className="block text-[10px] text-muted-foreground">{item.label}</span><div className="flex flex-wrap items-center justify-between gap-1"><span className="text-[10px] font-semibold sm:text-xs">{item.value}</span><StatusBadge status={item.status} className="px-1.5 text-[9px] sm:px-2.5 sm:text-[11px]" /></div></div>)}
+              </div>
+              <div className="border-t border-border bg-changed-soft px-2 py-2 text-[10px] font-semibold text-changed sm:px-3 sm:text-xs">Changes: A3 → A4</div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
