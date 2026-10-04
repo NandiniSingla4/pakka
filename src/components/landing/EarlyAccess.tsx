@@ -18,29 +18,29 @@ export function EarlyAccess() {
   return (
     <section
       id="early-access"
-      className="scroll-mt-20 px-5 py-12 sm:px-8"
+      className="scroll-mt-20 bg-primary px-4 py-10 text-primary-foreground sm:px-8 sm:py-12"
     >
-      <div className="mx-auto max-w-6xl border-t border-border pt-9">
+      <div className="mx-auto max-w-6xl">
         <div className="grid gap-5 md:grid-cols-[1.2fr_0.8fr] md:gap-12">
-          <div><p className="mb-2 text-xs font-bold uppercase text-primary">Early access</p><h2 className="max-w-xl text-balance text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
+          <div><p className="mb-2 text-xs font-bold uppercase text-primary-foreground/80">Early access</p><h2 className="max-w-xl text-balance text-2xl font-semibold leading-tight text-primary-foreground sm:text-3xl">
             {earlyAccess.headline}
           </h2>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-primary-foreground/85 sm:text-base">
             {earlyAccess.copy}
           </p></div>
 
           <div className="md:self-center">{submitted ? (
             <div
               role="status"
-              className="rounded-md bg-agreed-soft px-5 py-4 text-foreground"
+              className="rounded-md bg-card px-5 py-4 text-foreground"
             >
               <p className="font-semibold">Thanks for your interest.</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 This preview doesn’t send signups yet. Please check back when early access opens.
               </p>
             </div>
-          ) : !revealed ? <Button type="button" onClick={() => setRevealed(true)} className="h-11 px-5">{earlyAccess.cta} <ArrowRight className="size-4" /></Button> : (
-            <form onSubmit={handleSubmit} className="space-y-3 rounded-md border border-border bg-card p-4 shadow-sm sm:p-5">
+          ) : !revealed ? <Button type="button" onClick={() => setRevealed(true)} variant="secondary" className="h-11 px-5 font-bold">{earlyAccess.cta} <ArrowRight className="size-4" /></Button> : (
+            <form onSubmit={handleSubmit} className="space-y-3 rounded-md border border-border bg-card p-4 text-foreground shadow-sm sm:p-5">
               <p className="text-sm font-semibold">A little about you</p>
               <div>
                 <label
