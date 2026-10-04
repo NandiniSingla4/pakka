@@ -1,11 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { earlyAccess } from "@/lib/landing-content";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const inputClasses =
-  "w-full rounded-2xl border border-input bg-card px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 export function EarlyAccess() {
   const [submitted, setSubmitted] = useState(false);
+  const [revealed, setRevealed] = useState(false);
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -15,35 +18,36 @@ export function EarlyAccess() {
   return (
     <section
       id="early-access"
-      className="scroll-mt-6 px-5 py-16 sm:px-8 md:py-24"
+      className="scroll-mt-20 px-5 py-12 sm:px-8"
     >
-      <div className="mx-auto max-w-2xl">
-        <div className="rounded-3xl border border-primary/25 bg-card p-8 shadow-sm sm:p-12">
-          <h2 className="text-balance text-3xl font-semibold leading-tight text-foreground sm:text-4xl">
+      <div className="mx-auto max-w-6xl border-t border-border pt-9">
+        <div className="grid gap-5 md:grid-cols-[1.2fr_0.8fr] md:gap-12">
+          <div><p className="mb-2 text-xs font-bold uppercase text-primary">Early access</p><h2 className="max-w-xl text-balance text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
             {earlyAccess.headline}
           </h2>
-          <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+          <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             {earlyAccess.copy}
-          </p>
+          </p></div>
 
-          {submitted ? (
+          <div className="md:self-center">{submitted ? (
             <div
               role="status"
-              className="mt-8 rounded-2xl bg-agreed-soft px-5 py-4 text-foreground"
+              className="rounded-md bg-agreed-soft px-5 py-4 text-foreground"
             >
-              <p className="font-semibold">Thanks — you’re on the list.</p>
+              <p className="font-semibold">Thanks for your interest.</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                We’ll reach out when it’s your turn to test Pakka.
+                This preview doesn’t send signups yet. Please check back when early access opens.
               </p>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          ) : !revealed ? <Button type="button" onClick={() => setRevealed(true)} className="h-11 px-5">{earlyAccess.cta} <ArrowRight className="size-4" /></Button> : (
+            <form onSubmit={handleSubmit} className="space-y-3 rounded-md border border-border bg-card p-4 shadow-sm sm:p-5">
+              <p className="text-sm font-semibold">A little about you</p>
               <div>
                 <label
                   htmlFor="ea-name"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
+                  className="mb-1 block text-xs font-medium text-foreground"
                 >
-                  Your name
+                  Name
                 </label>
                 <input
                   id="ea-name"
@@ -57,9 +61,9 @@ export function EarlyAccess() {
               <div>
                 <label
                   htmlFor="ea-handle"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
+                  className="mb-1 block text-xs font-medium text-foreground"
                 >
-                  WhatsApp or Instagram handle
+                  Instagram/WhatsApp handle
                 </label>
                 <input
                   id="ea-handle"
@@ -73,7 +77,7 @@ export function EarlyAccess() {
               <div>
                 <label
                   htmlFor="ea-craft"
-                  className="mb-1.5 block text-sm font-medium text-foreground"
+                  className="mb-1 block text-xs font-medium text-foreground"
                 >
                   What do you make?
                 </label>
@@ -85,14 +89,15 @@ export function EarlyAccess() {
                   className={inputClasses}
                 />
               </div>
-              <button
+              <Button
                 type="submit"
-                className="w-full rounded-full bg-primary px-7 py-3.5 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="h-10 w-full"
               >
-                {earlyAccess.cta}
-              </button>
+                Register interest <ArrowRight className="size-4" />
+              </Button>
+              <p className="text-xs text-muted-foreground">Preview only — your details are not sent or saved yet.</p>
             </form>
-          )}
+          )}</div>
         </div>
       </div>
     </section>
