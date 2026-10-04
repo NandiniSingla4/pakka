@@ -1,3 +1,3 @@
-# Pakka redesign
-- [x] Replace long sections with compact navigation, hero, workspace, steps, tabs, audience chips, and reveal-on-click early access.
-- [x] Check mobile, tablet, and desktop layout and interactive states.
+# Pakka interactive redesign
+- [ ] Make three sample orders drive a split conversation/order workspace with persistent linked evidence and a separate Changes view.
+- [ ] Tighten hero and supporting content; verify mobile, tablet and desktop interactions.
