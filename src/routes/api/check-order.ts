@@ -156,7 +156,13 @@ export const Route = createFileRoute("/api/check-order")({
         const numbered = messages.map(m => `${m.id} ${m.from === "seller" ? "Seller" : "Customer"}: ${m.text}`).join("\n");
         try {
           const call = await callGemini(apiKey, numbered);
-          if (!call.ok) return diag(502, "Gemini request failed", call.status, call.details, call.model);
+          if (!call.ok) {
+            if (call.status === 429) {
+              console.error("Gemini quota exceeded, model:", call.model, "details:", call.details);
+              return json({ ok: false, kind: "error", message: QUOTA_MESSAGE }, 429);
+            }
+            return diag(502, "Gemini request failed", call.status, call.details, call.model);
+          }
           const raw = call.json;
           if (raw["is_custom_order_conversation"] === false) return reject();
           const result = validate(raw, messages);
