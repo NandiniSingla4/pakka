@@ -91,8 +91,8 @@ export function Hero() {
           </div>
 
           {/* Mockup: messy chat → clean Order Check */}
-          <div className="rise-in flex items-center gap-4 [animation-delay:150ms] sm:gap-5">
-            <div className="flex-1 rounded-2xl border border-border bg-card p-4 shadow-sm">
+          <div className="rise-in flex flex-col items-stretch gap-3 [animation-delay:150ms] sm:flex-row sm:items-center sm:gap-5">
+            <div className="min-w-0 flex-1 rounded-2xl border border-border bg-card p-4 shadow-sm">
               <div className="mb-3 flex items-center gap-2 text-muted-foreground">
                 <MessageCircle className="h-4 w-4" />
                 <p className="text-xs font-medium">Customer chat</p>
@@ -108,12 +108,12 @@ export function Hero() {
 
             <div
               aria-hidden="true"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm"
+              className="self-center flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm"
             >
-              <ArrowDown className="h-4 w-4 rotate-90 lg:rotate-0" />
+              <ArrowDown className="h-4 w-4 sm:-rotate-90" />
             </div>
 
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <MiniOrderCheck />
             </div>
           </div>
