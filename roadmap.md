@@ -11,4 +11,4 @@
 # Pakka thematic polish
 - [x] Replace unrelated hero and early-access shapes with conversation-to-order motifs.
 - [x] Remove em dashes from visible copy and refine the review language.
-- [ ] Verify the polished page and existing interactions at mobile and desktop sizes.
+- [x] Verify the polished page and existing interactions at mobile and desktop sizes.
