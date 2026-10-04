@@ -31,13 +31,13 @@ function DemoFieldRow({
         aria-expanded={expanded}
         className="h-auto min-h-16 w-full justify-between gap-2 rounded-none px-3 py-3 text-left hover:bg-secondary/40 sm:px-5"
       >
-        <span className="grid min-w-0 flex-1 grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] items-center gap-2 sm:gap-4">
-          <span className="min-w-0 truncate text-xs font-medium text-muted-foreground sm:text-sm">{field.label}</span>
-          <span className="min-w-0 truncate text-xs font-semibold text-foreground sm:text-sm">{field.value}</span>
+        <span className="grid min-w-0 flex-1 grid-cols-1 gap-0.5 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] sm:items-center sm:gap-4">
+          <span className="min-w-0 text-xs font-medium text-muted-foreground sm:text-sm">{field.label}</span>
+          <span className="min-w-0 whitespace-normal text-xs font-semibold text-foreground sm:text-sm">{field.value}</span>
         </span>
         <span className="flex shrink-0 items-center gap-1 sm:gap-3">
           <StatusBadge status={field.status} />
-          <ChevronDown className={cn("size-4 text-muted-foreground transition-transform", expanded && "rotate-180")} />
+          <ChevronDown aria-label={expanded ? "Hide evidence" : "View evidence"} className={cn("size-4 text-muted-foreground transition-transform", expanded && "rotate-180")} />
         </span>
       </Button>
       {expanded && <div className="border-t border-border bg-secondary/20 px-3 py-3 sm:px-5">
@@ -78,7 +78,7 @@ export function OrderCheckDemo() {
             <TabsContent value="order" className="m-0 min-h-96 p-3 sm:p-6">
               <div className="mx-auto max-w-4xl">
                 <div className="mb-4 grid grid-cols-3 gap-2 sm:gap-3">{([ {label: "Agreed", count: 3, className: "border-agreed/25 bg-agreed-soft text-agreed"}, {label: "Open", count: 2, className: "border-open/25 bg-open-soft text-open"}, {label: "Missing", count: 1, className: "border-missing/25 bg-missing-soft text-missing"} ]).map((item) => <div key={item.label} className={cn("flex items-baseline justify-between gap-1 rounded-md border px-2 py-2 sm:px-4", item.className)}><span className="text-xs font-semibold sm:text-sm">{item.label}</span><strong className="text-lg sm:text-xl">{item.count}</strong></div>)}</div>
-                <div className="overflow-hidden rounded-md border border-border"><div className="grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)_auto] gap-2 border-b border-border bg-secondary/50 px-3 py-2 text-[10px] font-semibold uppercase text-muted-foreground sm:px-5 sm:text-xs"><span>Field</span><span>Current detail</span><span className="pr-7">Status</span></div><ul>{demoFields.map((field) => <DemoFieldRow key={field.id} field={field} expanded={expandedId === field.id} onToggle={() => setExpandedId(expandedId === field.id ? null : field.id)} />)}</ul></div>
+                <div className="overflow-hidden rounded-md border border-border"><div className="hidden grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)_auto] gap-2 border-b border-border bg-secondary/50 px-5 py-2 text-xs font-semibold uppercase text-muted-foreground sm:grid"><span>Field</span><span>Current detail</span><span className="pr-7">Status</span></div><ul>{demoFields.map((field) => <DemoFieldRow key={field.id} field={field} expanded={expandedId === field.id} onToggle={() => setExpandedId(expandedId === field.id ? null : field.id)} />)}</ul></div>
                 <p className="mt-3 text-xs text-muted-foreground">Sample interpretation only. The seller reviews every detail before anything becomes final.</p>
               </div>
             </TabsContent>
