@@ -19,7 +19,7 @@ export function SellerControl() {
 
         <ul className="mt-8 space-y-3.5">
           {trust.privacy.map((point, i) => {
-            const Icon = privacyIcons[i];
+            const Icon = privacyIcons[i]!;
             return (
               <li key={point} className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-secondary text-foreground">

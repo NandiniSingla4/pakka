@@ -1,7 +1,7 @@
 import { ClipboardPaste, ScanSearch, LockKeyhole } from "lucide-react";
 import { steps } from "@/lib/landing-content";
 
-const icons = [ClipboardPaste, ScanSearch, LockKeyhole];
+const icons = [ClipboardPaste, ScanSearch, LockKeyhole] as const;
 
 export function HowItWorks() {
   return (

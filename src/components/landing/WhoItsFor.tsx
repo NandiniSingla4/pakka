@@ -31,7 +31,7 @@ export function WhoItsFor() {
 
         <ul className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3">
           {audiences.map((a) => {
-            const Icon = iconMap[a.icon];
+            const Icon = iconMap[a.icon]!;
             return (
               <li
                 key={a.label}
