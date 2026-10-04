@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, ArrowUpRight, Check, ChevronRight, History, MessageCircle, Palette, Cake, Scissors, ScanSearch, X, Heart } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, ChevronRight, History, MessageCircle, Palette, Cake, Scissors, ScanSearch, X, Heart, Loader2, RotateCcw, ShieldCheck } from "lucide-react";
 import { sampleOrders, type ConversationMessage, type DemoField, type SampleOrder, type OrderStatus } from "@/lib/landing-content";
+import { ERROR_MESSAGE, MAX_INPUT_CHARS, type CheckResponse, type LiveResult, type ParsedMessage } from "@/lib/check-order";
 import { StatusBadge } from "./StatusBadge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -61,40 +62,93 @@ function Changes({ order, onSelect, selectedChangeId, onSeeMessages }: { order: 
   return <div className="rise-in border-t border-border bg-changed-soft/45 p-4 sm:p-5"><div className="mb-3 flex items-center gap-2"><History className="size-4 text-changed" /><p className="text-xs font-bold text-foreground">What changed <span className="font-normal text-muted-foreground">· Separate from current status</span></p></div><div className="grid gap-2 sm:grid-cols-2">{order.changes.map(change => <Button key={change.id} variant="ghost" type="button" onClick={() => onSelect(change.id)} aria-pressed={selectedChangeId === change.id} className={cn("h-auto min-h-20 items-start justify-between rounded-lg border border-changed/15 bg-card p-3 text-left transition-all hover:-translate-y-0.5 hover:bg-changed-soft", selectedChangeId === change.id && "border-changed bg-changed-soft shadow-sm")}><span className="min-w-0"><span className="block text-[10px] font-bold uppercase text-muted-foreground">{change.field}</span><span className="mt-1.5 flex items-center gap-2 text-sm font-bold text-foreground"><span className="text-muted-foreground line-through">{change.from}</span><ArrowRight className="size-3.5 text-changed" />{change.to}</span><span className="mt-1 block text-[10px] text-changed">Messages {change.evidenceIds.map(id => `#${id}`).join(" → ")}</span></span><ChevronRight className="size-4 shrink-0 text-changed" /></Button>)}</div>{selectedChangeId && <Button variant="ghost" size="sm" className="mt-2 px-0 text-xs font-bold text-changed md:hidden" onClick={onSeeMessages}>View in conversation <ArrowUpRight /></Button>}</div>;
 }
 
+const LIVE_PLACEHOLDER = `Customer: Can you make a caricature of my parents? Maybe A3?
+Seller: Yes, I can make that.
+Customer: Actually A4.
+Seller: Done, A4 works.
+Customer: Need it by 12 Oct, possible?`;
+
+function toOrder(messages: ParsedMessage[], result: LiveResult): SampleOrder {
+  const ids = (list: string[]) => list.map(id => Number(id.replace(/\D/g, ""))).filter(Number.isFinite);
+  const fields = (["agreed", "open", "missing"] as const).flatMap(status => result[status].map((f, i): DemoField => ({ id: `${status}-${i}`, label: f.field, value: f.value, status, evidenceIds: status === "missing" ? [] : ids(f.evidence), reason: f.reason })));
+  return { id: "live", icon: "", title: "Your order check", shortTitle: "Your order", channel: "Pasted chat", customer: "Customer", conversation: messages.map(m => ({ id: m.n, from: m.from, text: m.text })), fields, changes: result.changes.map((c, i) => ({ id: `change-${i}`, field: c.field, from: c.from, to: c.to, evidenceIds: ids(c.evidence) })) };
+}
+
+function LiveStats({ refreshKey }: { refreshKey: number }) {
+  const [stats, setStats] = useState<{ ordersChecked: number; openOrMissingPct: number } | null>(null);
+  useEffect(() => { let alive = true; fetch("/api/stats").then(r => (r.ok ? r.json() : null)).then(d => { if (alive && d && typeof d.ordersChecked === "number") setStats(d); }).catch(() => {}); return () => { alive = false; }; }, [refreshKey]);
+  if (!stats) return null;
+  return <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground" aria-live="polite"><span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-agreed" />Orders checked: <strong className="text-foreground tabular-nums">{stats.ordersChecked}</strong></span><span><strong className="text-foreground tabular-nums">{stats.openOrMissingPct}%</strong> had at least one detail still Open or Missing</span></p>;
+}
+
+function LiveInput({ text, setText, loading, error, onSubmit }: { text: string; setText: (v: string) => void; loading: boolean; error: string | null; onSubmit: () => void }) {
+  return <form className="soft-pop grid gap-3 bg-chat p-4 sm:p-6" onSubmit={e => { e.preventDefault(); onSubmit(); }}>
+    <label htmlFor="live-chat" className="text-xs font-extrabold text-foreground">Paste an anonymised customer chat</label>
+    <p className="text-[11px] text-muted-foreground">Start each message with <strong>Customer:</strong> or <strong>Seller:</strong>. We number them M1, M2, M3 so every detail can point back to its source.</p>
+    <textarea id="live-chat" value={text} onChange={e => setText(e.target.value)} maxLength={MAX_INPUT_CHARS} rows={8} placeholder={LIVE_PLACEHOLDER} className="min-h-44 w-full resize-y rounded-lg border border-border bg-card p-3 text-sm leading-relaxed text-foreground shadow-sm placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/25" />
+    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground"><span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-3.5 text-agreed" />Please anonymise the conversation before pasting. Do not include names, phone numbers, email addresses or sensitive personal information.</span><span className="tabular-nums">{text.length}/{MAX_INPUT_CHARS}</span></div>
+    {error && <p role="alert" className="rounded-lg border border-missing/20 bg-missing-soft px-3 py-2 text-xs font-semibold text-missing">{error}</p>}
+    <div className="flex flex-wrap items-center gap-2"><Button type="submit" disabled={loading || !text.trim()} className="min-h-11 rounded-full bg-coral px-5 font-bold text-foreground hover:bg-coral/90">{loading ? <><Loader2 className="size-4 animate-spin" />Checking what’s actually pakka...</> : <>Check this order <ArrowRight className="size-4" /></>}</Button>{!text && <Button type="button" variant="ghost" size="sm" className="min-h-11 text-xs font-bold text-primary" onClick={() => setText(LIVE_PLACEHOLDER)}>Use the example</Button>}</div>
+  </form>;
+}
+
 export function OrderCheckDemo() {
+  const [mode, setMode] = useState<"sample" | "live">("sample");
   const [orderId, setOrderId] = useState(sampleOrders[0]?.id ?? "caricature");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedChangeId, setSelectedChangeId] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<View>("check");
   const [showChanges, setShowChanges] = useState(false);
   const [reviewedByOrder, setReviewedByOrder] = useState<Record<string, string[]>>({});
-  const order = sampleOrders.find(sample => sample.id === orderId) ?? sampleOrders[0];
-  if (!order) return null;
-  const selectedField = order.fields.find(field => field.id === selectedId);
-  const selectedChange = order.changes.find(change => change.id === selectedChangeId);
+  const [liveText, setLiveText] = useState("");
+  const [liveOrder, setLiveOrder] = useState<SampleOrder | null>(null);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [liveError, setLiveError] = useState<string | null>(null);
+  const [statsKey, setStatsKey] = useState(0);
+  const sampleOrder = sampleOrders.find(sample => sample.id === orderId) ?? sampleOrders[0];
+  if (!sampleOrder) return null;
+  const order = mode === "live" ? liveOrder : sampleOrder;
+  const selectedField = order?.fields.find(field => field.id === selectedId);
+  const selectedChange = order?.changes.find(change => change.id === selectedChangeId);
   const evidenceIds = selectedField?.evidenceIds ?? selectedChange?.evidenceIds ?? [];
   const selectedLabel = selectedField?.label ?? (selectedChange ? `${selectedChange.field} change` : null);
-  const SampleIcon = order.id === "cake" ? Cake : order.id === "tailoring" ? Scissors : Palette;
-  const reviewedIds = reviewedByOrder[order.id] ?? [];
-  const currentOrderId = order.id;
+  const SampleIcon = mode === "live" ? ScanSearch : sampleOrder.id === "cake" ? Cake : sampleOrder.id === "tailoring" ? Scissors : Palette;
+  const reviewedIds = order ? reviewedByOrder[order.id] ?? [] : [];
+  const currentOrderId = order?.id ?? "";
+  function resetSelection() { setSelectedId(null); setSelectedChangeId(null); setShowChanges(false); setMobileTab("check"); }
   function toggleReviewed(id: string) { setReviewedByOrder(previous => { const current = previous[currentOrderId] ?? []; return { ...previous, [currentOrderId]: current.includes(id) ? current.filter(value => value !== id) : [...current, id] }; }); }
-  function selectOrder(next: SampleOrder) { setOrderId(next.id); setSelectedId(null); setSelectedChangeId(null); setShowChanges(false); setMobileTab("check"); }
+  function selectOrder(next: SampleOrder) { setOrderId(next.id); resetSelection(); }
+  function switchMode(next: "sample" | "live") { setMode(next); resetSelection(); }
   function selectField(id: string) { setSelectedId(id); setSelectedChangeId(null); }
   function selectChange(id: string) { setSelectedChangeId(id); setSelectedId(null); }
+  async function runCheck() {
+    if (liveLoading) return;
+    setLiveLoading(true); setLiveError(null);
+    try {
+      const res = await fetch("/api/check-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: liveText }) });
+      const data = (await res.json().catch(() => null)) as CheckResponse | null;
+      if (data?.ok) { setLiveOrder(toOrder(data.messages, data.result)); setReviewedByOrder(p => ({ ...p, live: [] })); resetSelection(); setStatsKey(k => k + 1); }
+      else setLiveError(data?.message ?? ERROR_MESSAGE);
+    } catch { setLiveError(ERROR_MESSAGE); } finally { setLiveLoading(false); }
+  }
   return <section id="try-pakka" className="scroll-mt-18 bg-porcelain px-4 pb-10 sm:px-8 sm:pb-14">
     <div className="mx-auto max-w-6xl">
       <div className="mb-4 flex items-end justify-between gap-3"><div><p className="text-[10px] font-bold uppercase text-coral">01 / TAKE A LOOK</p><h2 className="mt-1 font-display text-2xl font-extrabold text-foreground sm:text-[28px]">Try Pakka <span className="text-coral">↗</span></h2></div><span className="hidden text-xs text-muted-foreground sm:block">Pick an order. See what’s clear and what still needs you.</span></div>
-      <div className="mb-3 grid grid-cols-3 gap-1.5 sm:gap-2" role="group" aria-label="Sample orders">{sampleOrders.map(sample => { const Icon = sample.id === "cake" ? Cake : sample.id === "tailoring" ? Scissors : Palette; return <Button key={sample.id} type="button" variant="ghost" onClick={() => selectOrder(sample)} aria-pressed={sample.id === order.id} className={cn("h-14 min-w-0 flex-col justify-center gap-0.5 rounded-lg border border-border bg-card px-1 text-[10px] font-bold text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary/60 hover:shadow-sm sm:h-12 sm:flex-row sm:justify-start sm:gap-3 sm:px-4 sm:text-sm", sample.id === order.id && "border-primary/45 bg-accent/75 text-primary shadow-sm")}><span className={cn("grid size-5 shrink-0 place-items-center rounded-full bg-secondary text-primary sm:size-7", sample.id === order.id && "bg-coral-soft text-missing")}><Icon aria-hidden="true" className="size-3.5 sm:size-4" /></span><span className="max-w-full truncate sm:hidden">{sample.shortTitle}</span><span className="hidden truncate sm:inline">{sample.title}</span>{sample.id === order.id && <span className="ml-auto hidden size-1.5 shrink-0 rounded-full bg-coral sm:block" />}</Button>; })}</div>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><div className="inline-grid grid-cols-2 gap-1 rounded-full border border-border bg-card p-1" role="tablist" aria-label="Demo mode">{([["sample", "Sample Demo"], ["live", "Check Your Order"]] as const).map(([key, label]) => <Button key={key} type="button" role="tab" aria-selected={mode === key} variant="ghost" onClick={() => switchMode(key)} className={cn("h-10 rounded-full px-4 text-xs font-bold text-muted-foreground hover:bg-secondary/60", mode === key && "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground")}>{label}</Button>)}</div><LiveStats refreshKey={statsKey} /></div>
+      {mode === "sample" && <div className="mb-3 grid grid-cols-3 gap-1.5 sm:gap-2" role="group" aria-label="Sample orders">{sampleOrders.map(sample => { const Icon = sample.id === "cake" ? Cake : sample.id === "tailoring" ? Scissors : Palette; return <Button key={sample.id} type="button" variant="ghost" onClick={() => selectOrder(sample)} aria-pressed={sample.id === sampleOrder.id} className={cn("h-14 min-w-0 flex-col justify-center gap-0.5 rounded-lg border border-border bg-card px-1 text-[10px] font-bold text-foreground transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary/60 hover:shadow-sm sm:h-12 sm:flex-row sm:justify-start sm:gap-3 sm:px-4 sm:text-sm", sample.id === sampleOrder.id && "border-primary/45 bg-accent/75 text-primary shadow-sm")}><span className={cn("grid size-5 shrink-0 place-items-center rounded-full bg-secondary text-primary sm:size-7", sample.id === sampleOrder.id && "bg-coral-soft text-missing")}><Icon aria-hidden="true" className="size-3.5 sm:size-4" /></span><span className="max-w-full truncate sm:hidden">{sample.shortTitle}</span><span className="hidden truncate sm:inline">{sample.title}</span>{sample.id === sampleOrder.id && <span className="ml-auto hidden size-1.5 shrink-0 rounded-full bg-coral sm:block" />}</Button>; })}</div>}
       <div className="overflow-hidden rounded-lg border border-primary/20 bg-card shadow-xl shadow-primary/10">
-        <div className="grid grid-cols-1 items-center gap-2 bg-shell px-3 py-3 text-shell-foreground min-[360px]:grid-cols-[minmax(0,1fr)_auto] sm:px-5"><div className="flex min-w-0 items-center gap-2.5"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-lilac text-shell"><SampleIcon className="size-4" /></span><div className="min-w-0"><p className="truncate font-display text-sm font-bold">{order.title}</p><p className="text-[10px] leading-tight text-shell-foreground/75">A sample order, just for you to explore</p></div></div><span className="flex w-fit shrink-0 items-center gap-1 rounded-full border border-shell-foreground/30 px-2 py-1 text-[9px] font-bold text-shell-foreground min-[360px]:justify-self-end sm:text-[10px]"><span className="size-1.5 shrink-0 rounded-full bg-butter" /> INTERACTIVE DEMO</span></div>
-        <div className="flex border-b border-border lg:hidden" role="tablist" aria-label="Workspace views">{([ ["conversation", "Conversation", MessageCircle], ["check", "Order Check", ScanSearch], ["changes", "Changes", History] ] as const).map(([key, label, Icon]) => <Button key={key} type="button" role="tab" aria-selected={mobileTab === key} variant="ghost" onClick={() => setMobileTab(key)} className={cn("h-12 min-w-0 flex-1 gap-1 rounded-none border-b-2 border-transparent px-1 text-[10px] font-bold text-muted-foreground hover:bg-secondary/50 sm:gap-2 sm:text-xs", mobileTab === key && "border-coral bg-coral-soft/30 text-primary")}><Icon className="hidden size-3.5 shrink-0 min-[360px]:block" />{label}</Button>)}</div>
-        <div key={order.id} className="soft-pop lg:grid lg:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)]">
-          <div className={cn("lg:min-w-0 lg:border-r lg:border-border", mobileTab !== "conversation" && "hidden lg:block")}><Conversation order={order} evidenceIds={evidenceIds} selectedLabel={selectedLabel} /></div>
-          <div className={cn("lg:min-w-0", mobileTab !== "check" && "hidden lg:block")}><OrderCheck order={order} selectedId={selectedId} onSelect={selectField} onClear={() => setSelectedId(null)} onSeeMessages={() => setMobileTab("conversation")} reviewedIds={reviewedIds} onReview={toggleReviewed} /></div>
-          <div className={cn("lg:hidden", mobileTab !== "changes" && "hidden")}><Changes order={order} selectedChangeId={selectedChangeId} onSelect={selectChange} onSeeMessages={() => setMobileTab("conversation")} /></div>
-        </div>
-        <div className="hidden items-center justify-between border-t border-border bg-card px-5 py-2.5 lg:flex"><p className="text-xs text-muted-foreground">Select a detail to see the messages behind it.</p><Button variant="ghost" size="sm" className="h-10 gap-2 text-xs font-bold text-changed" aria-expanded={showChanges} onClick={() => setShowChanges(!showChanges)}><History className="size-4" /> {showChanges ? "Hide changes" : `Changes (${order.changes.length})`}</Button></div>
-        {showChanges && <div className="hidden lg:block"><Changes order={order} selectedChangeId={selectedChangeId} onSelect={selectChange} onSeeMessages={() => setMobileTab("conversation")} /></div>}
+        <div className="grid grid-cols-1 items-center gap-2 bg-shell px-3 py-3 text-shell-foreground min-[360px]:grid-cols-[minmax(0,1fr)_auto] sm:px-5"><div className="flex min-w-0 items-center gap-2.5"><span className="grid size-8 shrink-0 place-items-center rounded-lg bg-lilac text-shell"><SampleIcon className="size-4" /></span><div className="min-w-0"><p className="truncate font-display text-sm font-bold">{mode === "live" ? "Check your order" : sampleOrder.title}</p><p className="text-[10px] leading-tight text-shell-foreground/75">{mode === "live" ? "AI interprets. You decide." : "A sample order, just for you to explore"}</p></div></div><span className="flex w-fit shrink-0 items-center gap-1 rounded-full border border-shell-foreground/30 px-2 py-1 text-[9px] font-bold text-shell-foreground min-[360px]:justify-self-end sm:text-[10px]"><span className="size-1.5 shrink-0 rounded-full bg-butter" /> {mode === "live" ? "LIVE CHECK" : "INTERACTIVE DEMO"}</span></div>
+        {mode === "live" && !liveOrder && <LiveInput text={liveText} setText={setLiveText} loading={liveLoading} error={liveError} onSubmit={runCheck} />}
+        {order && <>
+          <div className="flex border-b border-border lg:hidden" role="tablist" aria-label="Workspace views">{([ ["conversation", "Conversation", MessageCircle], ["check", "Order Check", ScanSearch], ["changes", "Changes", History] ] as const).map(([key, label, Icon]) => <Button key={key} type="button" role="tab" aria-selected={mobileTab === key} variant="ghost" onClick={() => setMobileTab(key)} className={cn("h-12 min-w-0 flex-1 gap-1 rounded-none border-b-2 border-transparent px-1 text-[10px] font-bold text-muted-foreground hover:bg-secondary/50 sm:gap-2 sm:text-xs", mobileTab === key && "border-coral bg-coral-soft/30 text-primary")}><Icon className="hidden size-3.5 shrink-0 min-[360px]:block" />{label}</Button>)}</div>
+          <div key={order.id + order.conversation.length} className="soft-pop lg:grid lg:grid-cols-[minmax(0,0.96fr)_minmax(0,1.04fr)]">
+            <div className={cn("lg:min-w-0 lg:border-r lg:border-border", mobileTab !== "conversation" && "hidden lg:block")}><Conversation order={order} evidenceIds={evidenceIds} selectedLabel={selectedLabel} /></div>
+            <div className={cn("lg:min-w-0", mobileTab !== "check" && "hidden lg:block")}><OrderCheck order={order} selectedId={selectedId} onSelect={selectField} onClear={() => setSelectedId(null)} onSeeMessages={() => setMobileTab("conversation")} reviewedIds={reviewedIds} onReview={toggleReviewed} /></div>
+            <div className={cn("lg:hidden", mobileTab !== "changes" && "hidden")}>{order.changes.length ? <Changes order={order} selectedChangeId={selectedChangeId} onSelect={selectChange} onSeeMessages={() => setMobileTab("conversation")} /> : <p className="p-5 text-xs text-muted-foreground">No changes found in this chat.</p>}</div>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-card px-4 py-2.5 sm:px-5"><p className="hidden text-xs text-muted-foreground lg:block">Select a detail to see the messages behind it.</p>{mode === "live" && <Button variant="ghost" size="sm" className="h-10 gap-2 text-xs font-bold text-primary" onClick={() => { setLiveOrder(null); resetSelection(); }}><RotateCcw className="size-4" /> Check another conversation</Button>}{order.changes.length > 0 && <Button variant="ghost" size="sm" className="ml-auto hidden h-10 gap-2 text-xs font-bold text-changed lg:inline-flex" aria-expanded={showChanges} onClick={() => setShowChanges(!showChanges)}><History className="size-4" /> {showChanges ? "Hide changes" : `Changes (${order.changes.length})`}</Button>}</div>
+          {showChanges && <div className="hidden lg:block"><Changes order={order} selectedChangeId={selectedChangeId} onSelect={selectChange} onSeeMessages={() => setMobileTab("conversation")} /></div>}
+        </>}
       </div>
     </div>
   </section>;
