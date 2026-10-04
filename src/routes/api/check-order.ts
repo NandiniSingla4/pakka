@@ -7,7 +7,8 @@ import { logInteraction } from "@/lib/pakka-supabase.server";
 
 const API = "https://generativelanguage.googleapis.com/v1beta";
 /** Preferred Flash models, tried in order; if none exist for the key, one is discovered via ListModels. */
-const PREFERRED_MODELS = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash"];
+/** Flash models tried in order; gemini-flash-latest tracks the Flash model this key can actually use. */
+const PREFERRED_MODELS = ["gemini-flash-latest", "gemini-2.0-flash"];
 
 type GeminiCall = { ok: true; model: string; json: Record<string, unknown> } | { ok: false; model: string; status: number; details: string };
 
@@ -34,7 +35,13 @@ async function generate(apiKey: string, model: string, numbered: string): Promis
     body: JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM }] }, contents: [{ role: "user", parts: [{ text: numbered }] }], generationConfig }),
   });
   const body = await res.text();
-  if (!res.ok) { const details = redact(body, apiKey); console.error("Gemini error", model, res.status, details); return { ok: false, model, status: res.status, details }; }
+  if (!res.ok) {
+    const details = redact(body, apiKey);
+    // Log the quota state without ever printing the key.
+    const retryAfter = res.headers.get("retry-after") ?? "";
+    console.error("Gemini error", model, res.status, retryAfter ? `retry-after: ${retryAfter}s` : "no retry-after header", details);
+    return { ok: false, model, status: res.status, details: retryAfter ? `${details} (retry-after: ${retryAfter}s)` : details };
+  }
   try {
     const data = JSON.parse(body) as { candidates?: { finishReason?: string; content?: { parts?: { text?: string; thought?: boolean }[] } }[]; promptFeedback?: { blockReason?: string } };
     const cand = data.candidates?.[0];
@@ -127,6 +134,8 @@ function validate(raw: Record<string, unknown>, messages: ParsedMessage[]): Live
   }
   return result;
 }
+
+const QUOTA_MESSAGE = "Pakka has reached its temporary AI usage limit. Please try again later.";
 
 const json = (body: CheckResponse, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 const reject = () => json({ ok: false, kind: "rejected", message: REJECT_MESSAGE }, 400);
