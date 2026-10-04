@@ -36,7 +36,7 @@ export const sampleOrders: SampleOrder[] = [
       { id: 1, from: "customer", text: "Hi! Can you make a caricature of my parents? Maybe A3?" },
       { id: 2, from: "seller", text: "Yes, I can make that!" },
       { id: 3, from: "customer", text: "A blue background like the reference would be nice." },
-      { id: 4, from: "customer", text: "Actually A4 works better for the frame." },
+      { id: 4, from: "customer", text: "Actually A4." },
       { id: 5, from: "seller", text: "Done, A4 works." },
       { id: 6, from: "customer", text: "And beige instead of blue for the background?" },
       { id: 7, from: "seller", text: "Yes, beige background it is." },
