@@ -5,7 +5,66 @@ import {
 } from "@/lib/check-order";
 import { logInteraction } from "@/lib/pakka-supabase.server";
 
-const MODEL = "gemini-2.5-flash";
+const API = "https://generativelanguage.googleapis.com/v1beta";
+/** Preferred Flash models, tried in order; if none exist for the key, one is discovered via ListModels. */
+const PREFERRED_MODELS = ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.0-flash"];
+
+type GeminiCall = { ok: true; model: string; json: Record<string, unknown> } | { ok: false; model: string; status: number; details: string };
+
+const redact = (s: string, key: string) => s.split(key).join("[redacted]").slice(0, 800);
+
+async function discoverFlashModel(apiKey: string): Promise<string | null> {
+  const res = await fetch(`${API}/models?pageSize=200`, { headers: { "x-goog-api-key": apiKey } });
+  if (!res.ok) { console.error("Gemini ListModels failed", res.status, redact(await res.text(), apiKey)); return null; }
+  const data = (await res.json()) as { models?: { name?: string; supportedGenerationMethods?: string[] }[] };
+  const names = (data.models ?? [])
+    .filter(m => m.supportedGenerationMethods?.includes("generateContent"))
+    .map(m => (m.name ?? "").replace(/^models\//, ""))
+    .filter(n => /flash/.test(n) && !/(image|tts|live|audio|embedding|thinking-exp|lite)/.test(n));
+  names.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+  return names.find(n => !/preview|exp/.test(n)) ?? names[0] ?? null;
+}
+
+async function generate(apiKey: string, model: string, numbered: string): Promise<GeminiCall> {
+  const generationConfig: Record<string, unknown> = { responseMimeType: "application/json", responseSchema, temperature: 0, maxOutputTokens: 8192 };
+  if (/^gemini-2\.5-flash/.test(model)) generationConfig["thinkingConfig"] = { thinkingBudget: 0 };
+  const res = await fetch(`${API}/models/${encodeURIComponent(model)}:generateContent`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+    body: JSON.stringify({ systemInstruction: { parts: [{ text: SYSTEM }] }, contents: [{ role: "user", parts: [{ text: numbered }] }], generationConfig }),
+  });
+  const body = await res.text();
+  if (!res.ok) { const details = redact(body, apiKey); console.error("Gemini error", model, res.status, details); return { ok: false, model, status: res.status, details }; }
+  try {
+    const data = JSON.parse(body) as { candidates?: { finishReason?: string; content?: { parts?: { text?: string; thought?: boolean }[] } }[]; promptFeedback?: { blockReason?: string } };
+    const cand = data.candidates?.[0];
+    const out = cand?.content?.parts?.filter(p => !p.thought).map(p => p.text ?? "").join("") ?? "";
+    if (!out) return { ok: false, model, status: 200, details: `Empty response (finishReason: ${cand?.finishReason ?? "none"}, blockReason: ${data.promptFeedback?.blockReason ?? "none"})` };
+    return { ok: true, model, json: JSON.parse(out) as Record<string, unknown> };
+  } catch (e) {
+    console.error("Gemini parse error", model, body.slice(0, 500));
+    return { ok: false, model, status: 200, details: `Could not parse Gemini JSON: ${e instanceof Error ? e.message : "unknown"}` };
+  }
+}
+
+async function callGemini(apiKey: string, numbered: string): Promise<GeminiCall> {
+  const override = process.env["GEMINI_MODEL"]?.trim();
+  const tried = new Set<string>();
+  let last: GeminiCall | null = null;
+  for (const model of override ? [override, ...PREFERRED_MODELS] : PREFERRED_MODELS) {
+    if (tried.has(model)) continue; tried.add(model);
+    last = await generate(apiKey, model, numbered);
+    // Only a missing/unsupported model moves on; auth, quota and request errors are reported as-is.
+    if (last.ok || last.status !== 404) return last;
+  }
+  const discovered = await discoverFlashModel(apiKey);
+  if (discovered && !tried.has(discovered)) return generate(apiKey, discovered, numbered);
+  return last ?? { ok: false, model: "none", status: 404, details: "No Gemini Flash model available for this key" };
+}
+
+function diag(httpStatus: number, error: string, status: number, details: string, model?: string) {
+  return Response.json({ ok: false, kind: "error", message: ERROR_MESSAGE, error, status, details, model }, { status: httpStatus, headers: { "Cache-Control": "no-store" } });
+}
 
 const fieldSchema = {
   type: "OBJECT",
@@ -83,23 +142,13 @@ export const Route = createFileRoute("/api/check-order")({
         const messages = parseConversation(text);
         if (messages.length < 2 || messages.length > MAX_MESSAGES || !messages.some(m => m.from === "customer") || !messages.some(m => m.from === "seller")) return reject();
 
-        const apiKey = process.env["GEMINI_API_KEY"];
-        if (!apiKey) { console.error("GEMINI_API_KEY missing"); return json({ ok: false, kind: "error", message: ERROR_MESSAGE }, 500); }
+        const apiKey = process.env["GEMINI_API_KEY"]?.trim();
+        if (!apiKey) { console.error("GEMINI_API_KEY missing or empty"); return diag(500, "GEMINI_API_KEY is not configured on the server", 0, ""); }
         const numbered = messages.map(m => `${m.id} ${m.from === "seller" ? "Seller" : "Customer"}: ${m.text}`).join("\n");
         try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-            body: JSON.stringify({
-              systemInstruction: { parts: [{ text: SYSTEM }] },
-              contents: [{ role: "user", parts: [{ text: numbered }] }],
-              generationConfig: { responseMimeType: "application/json", responseSchema, temperature: 0, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } },
-            }),
-          });
-          if (!res.ok) { console.error("Gemini error", res.status, (await res.text()).slice(0, 500)); return json({ ok: false, kind: "error", message: ERROR_MESSAGE }, 502); }
-          const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-          const out = data.candidates?.[0]?.content?.parts?.map(p => p.text ?? "").join("") ?? "";
-          const raw = JSON.parse(out) as Record<string, unknown>;
+          const call = await callGemini(apiKey, numbered);
+          if (!call.ok) return diag(502, "Gemini request failed", call.status, call.details, call.model);
+          const raw = call.json;
           if (raw["is_custom_order_conversation"] === false) return reject();
           const result = validate(raw, messages);
           try {
