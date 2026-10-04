@@ -76,7 +76,8 @@ export function OrderCheckDemo() {
   const selectedLabel = selectedField?.label ?? (selectedChange ? `${selectedChange.field} change` : null);
   const SampleIcon = order.id === "cake" ? Cake : order.id === "tailoring" ? Scissors : Palette;
   const reviewedIds = reviewedByOrder[order.id] ?? [];
-  function toggleReviewed(id: string) { setReviewedByOrder(previous => { const current = previous[order.id] ?? []; return { ...previous, [order.id]: current.includes(id) ? current.filter(value => value !== id) : [...current, id] }; }); }
+  const currentOrderId = order.id;
+  function toggleReviewed(id: string) { setReviewedByOrder(previous => { const current = previous[currentOrderId] ?? []; return { ...previous, [currentOrderId]: current.includes(id) ? current.filter(value => value !== id) : [...current, id] }; }); }
   function selectOrder(next: SampleOrder) { setOrderId(next.id); setSelectedId(null); setSelectedChangeId(null); setShowChanges(false); setMobileTab("check"); }
   function selectField(id: string) { setSelectedId(id); setSelectedChangeId(null); }
   function selectChange(id: string) { setSelectedChangeId(id); setSelectedId(null); }
