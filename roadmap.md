@@ -14,6 +14,6 @@
 - [x] Verify the polished page and existing interactions at mobile and desktop sizes.
 
 # Final responsive QA
-- [ ] Audit phone, tablet, and desktop widths for overflow, clipping, readability, and scrolling.
-- [ ] Verify navigation, workspace state, evidence, tabs, and early access across breakpoints; fix issues found.
-- [ ] Rename the demo pill to INTERACTIVE DEMO and confirm visible copy consistency.
+- [x] Audit phone, tablet, and desktop widths for overflow, clipping, readability, and scrolling.
+- [x] Verify navigation, workspace state, evidence, tabs, and early access across breakpoints; fix issues found.
+- [x] Rename the demo pill to INTERACTIVE DEMO and confirm visible copy consistency.
