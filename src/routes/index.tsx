@@ -18,5 +18,5 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 function Landing() {
-  return <main className="min-h-screen bg-background"><Navigation /><Hero /><OrderCheckDemo /><WhyPakka /><WhoItsFor /><EarlyAccess /><footer className="border-t border-border px-4 py-5 sm:px-8"><div className="mx-auto flex max-w-6xl items-center justify-between gap-4 text-xs text-muted-foreground"><span className="font-display text-lg font-semibold text-foreground">pakka<span className="text-primary">.</span></span><span>AI interprets. You decide.</span></div></footer></main>;
+  return <main className="min-h-screen bg-background"><Navigation /><Hero /><OrderCheckDemo /><WhyPakka /><WhoItsFor /><EarlyAccess /><footer className="border-t border-border px-4 py-5 sm:px-8"><div className="mx-auto flex max-w-6xl items-center justify-between gap-4 text-xs text-muted-foreground"><span className="font-display text-lg font-bold text-foreground">pakka<span className="text-primary">.</span></span><span>AI interprets. You decide.</span></div></footer></main>;
 }
