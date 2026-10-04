@@ -19,8 +19,9 @@
 - [x] Rename the demo pill to INTERACTIVE DEMO and confirm visible copy consistency.
 
 ## Task 4: Live Check Your Order
-- [ ] Sample Demo / Check Your Order mode toggle in Try Pakka
-- [ ] /api/check-order: split M1.., guardrails, Gemini (GEMINI_API_KEY), conservative validation, Supabase log (SUPABASE_URL, SUPABASE_SERVICE_KEY)
-- [ ] /api/stats: orders checked + % open/missing from pakka_interactions
-- [ ] Render results in existing workspace UI; loading/error states
-- [ ] Verify no secrets in frontend code
+- [x] Sample Demo / Check Your Order mode toggle in Try Pakka
+- [x] /api/check-order: split M1.., guardrails, Gemini (GEMINI_API_KEY), conservative validation, Supabase log (SUPABASE_URL, SUPABASE_SERVICE_KEY)
+- [x] /api/stats: orders checked + % open/missing from pakka_interactions
+- [x] Render results in existing workspace UI; loading/error states
+- [x] Verify no secrets in frontend code
+- [ ] Live Gemini/Supabase test: blocked until GEMINI_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY exist in the deployment environment

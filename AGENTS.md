@@ -13,3 +13,4 @@
 - Keep sample-order messages, field evidence IDs, and change history together in editable landing content; this keeps the workspace presentation independent from future analysis data sources.
 - Use semantic color tokens and a single global visual system for the landing and demo surfaces; this keeps interactive statuses and future live results visually consistent.
 - Keep decorative conversation-to-order motifs in a shared presentation component; this connects visual accents to evidence verification without duplicating decoration logic.
+- Live order checks go through server routes /api/check-order and /api/stats; secrets are read only via process.env in those routes and *.server.ts helpers, and Gemini output is re-validated server-side (Agreed needs valid seller evidence) so the model never has the final say.
