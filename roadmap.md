@@ -12,3 +12,8 @@
 - [x] Replace unrelated hero and early-access shapes with conversation-to-order motifs.
 - [x] Remove em dashes from visible copy and refine the review language.
 - [x] Verify the polished page and existing interactions at mobile and desktop sizes.
+
+# Final responsive QA
+- [x] Audit phone, tablet, and desktop widths for overflow, clipping, readability, and scrolling.
+- [x] Verify navigation, workspace state, evidence, tabs, and early access across breakpoints; fix issues found.
+- [x] Rename the demo pill to INTERACTIVE DEMO and confirm visible copy consistency.
