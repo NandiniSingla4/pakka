@@ -22,6 +22,11 @@ async function count(filter: string) {
   return total && total !== "*" ? Number(total) : 0;
 }
 
+/** Successful stored analyses for one anonymous visitor (only successful checks are ever inserted). */
+export async function countVisitorChecks(visitorId: string) {
+  return count(`&visitor_id=eq.${encodeURIComponent(visitorId)}`);
+}
+
 export async function getStats() {
   const [total, flagged] = await Promise.all([count(""), count("&had_open_or_missing=eq.true")]);
   return { ordersChecked: total, openOrMissingPct: total ? Math.round((flagged / total) * 100) : 0 };
