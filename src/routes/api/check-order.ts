@@ -120,6 +120,7 @@ function validate(raw: Record<string, unknown>, messages: ParsedMessage[]): Live
 }
 
 const QUOTA_MESSAGE = "Pakka has reached its temporary AI usage limit. Please try again later.";
+const BUSY_MESSAGE = "Pakka’s AI service is temporarily busy. Please try again in a few minutes.";
 
 const json = (body: CheckResponse, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 const reject = () => json({ ok: false, kind: "rejected", message: REJECT_MESSAGE }, 400);
