@@ -6,25 +6,14 @@ import {
 import { logInteraction } from "@/lib/pakka-supabase.server";
 
 const API = "https://generativelanguage.googleapis.com/v1beta";
-/** Preferred Flash models, tried in order; if none exist for the key, one is discovered via ListModels. */
-/** Flash models tried in order; gemini-flash-latest tracks the Flash model this key can actually use. */
-const PREFERRED_MODELS = ["gemini-flash-latest", "gemini-2.0-flash"];
+/** Pakka only needs lightweight structured extraction: Flash-Lite is primary, gemini-3.8-flash is the single 503 fallback. */
+const PRIMARY_MODEL = "gemini-3.5-flash-lite";
+const FALLBACK_MODEL = "gemini-3.8-flash";
 
 type GeminiCall = { ok: true; model: string; json: Record<string, unknown> } | { ok: false; model: string; status: number; details: string };
 
 const redact = (s: string, key: string) => s.split(key).join("[redacted]").slice(0, 800);
 
-async function discoverFlashModel(apiKey: string): Promise<string | null> {
-  const res = await fetch(`${API}/models?pageSize=200`, { headers: { "x-goog-api-key": apiKey } });
-  if (!res.ok) { console.error("Gemini ListModels failed", res.status, redact(await res.text(), apiKey)); return null; }
-  const data = (await res.json()) as { models?: { name?: string; supportedGenerationMethods?: string[] }[] };
-  const names = (data.models ?? [])
-    .filter(m => m.supportedGenerationMethods?.includes("generateContent"))
-    .map(m => (m.name ?? "").replace(/^models\//, ""))
-    .filter(n => /flash/.test(n) && !/(image|tts|live|audio|embedding|thinking-exp|lite)/.test(n));
-  names.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
-  return names.find(n => !/preview|exp/.test(n)) ?? names[0] ?? null;
-}
 
 async function generate(apiKey: string, model: string, numbered: string): Promise<GeminiCall> {
   const generationConfig: Record<string, unknown> = { responseMimeType: "application/json", responseSchema, temperature: 0, maxOutputTokens: 8192 };
@@ -55,18 +44,13 @@ async function generate(apiKey: string, model: string, numbered: string): Promis
 }
 
 async function callGemini(apiKey: string, numbered: string): Promise<GeminiCall> {
+  // GEMINI_MODEL stays as an optional server-side override; default is stable Flash-Lite.
   const override = process.env["GEMINI_MODEL"]?.trim();
-  const tried = new Set<string>();
-  let last: GeminiCall | null = null;
-  for (const model of override ? [override, ...PREFERRED_MODELS] : PREFERRED_MODELS) {
-    if (tried.has(model)) continue; tried.add(model);
-    last = await generate(apiKey, model, numbered);
-    // Only a missing/unsupported model moves on; auth, quota and request errors are reported as-is.
-    if (last.ok || last.status !== 404) return last;
-  }
-  const discovered = await discoverFlashModel(apiKey);
-  if (discovered && !tried.has(discovered)) return generate(apiKey, discovered, numbered);
-  return last ?? { ok: false, model: "none", status: 404, details: "No Gemini Flash model available for this key" };
+  const primary = override || PRIMARY_MODEL;
+  const attempt = await generate(apiKey, primary, numbered);
+  // Exactly one fallback, only for transient high-demand responses; no repeated retries.
+  if (attempt.ok || attempt.status !== 503) return attempt;
+  return generate(apiKey, FALLBACK_MODEL, numbered);
 }
 
 function diag(httpStatus: number, error: string, status: number, details: string, model?: string) {
@@ -136,6 +120,7 @@ function validate(raw: Record<string, unknown>, messages: ParsedMessage[]): Live
 }
 
 const QUOTA_MESSAGE = "Pakka has reached its temporary AI usage limit. Please try again later.";
+const BUSY_MESSAGE = "Pakka’s AI service is temporarily busy. Please try again in a few minutes.";
 
 const json = (body: CheckResponse, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 const reject = () => json({ ok: false, kind: "rejected", message: REJECT_MESSAGE }, 400);
@@ -160,6 +145,11 @@ export const Route = createFileRoute("/api/check-order")({
             if (call.status === 429) {
               console.error("Gemini quota exceeded, model:", call.model, "details:", call.details);
               return json({ ok: false, kind: "error", message: QUOTA_MESSAGE }, 429);
+            }
+            if (call.status === 503) {
+              // Both the primary model and the single fallback reported high demand.
+              console.error("Gemini unavailable after primary and fallback, model:", call.model, "details:", call.details);
+              return json({ ok: false, kind: "error", message: BUSY_MESSAGE }, 503);
             }
             return diag(502, "Gemini request failed", call.status, call.details, call.model);
           }
