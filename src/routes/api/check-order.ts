@@ -1,22 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  ERROR_MESSAGE, MAX_INPUT_CHARS, MAX_MESSAGES, REJECT_MESSAGE, containsPersonalDetails, parseConversation,
+  CAP_MESSAGE, ERROR_MESSAGE, MAX_INPUT_CHARS, MAX_MESSAGES, MAX_OUTPUT_TOKENS, REJECT_MESSAGE, VISITOR_CAP, containsPersonalDetails, isVisitorId, parseConversation,
   type CheckResponse, type LiveChange, type LiveField, type LiveResult, type ParsedMessage,
 } from "@/lib/check-order";
-import { logInteraction } from "@/lib/pakka-supabase.server";
+import { countVisitorChecks, logInteraction } from "@/lib/pakka-supabase.server";
 
 const API = "https://generativelanguage.googleapis.com/v1beta";
 /** Pakka only needs lightweight structured extraction: Flash-Lite is primary, gemini-3.8-flash is the single 503 fallback. */
 const PRIMARY_MODEL = "gemini-3.5-flash-lite";
 const FALLBACK_MODEL = "gemini-3.8-flash";
 
-type GeminiCall = { ok: true; model: string; json: Record<string, unknown> } | { ok: false; model: string; status: number; details: string };
+type Usage = { inputTokens: number | null; outputTokens: number | null };
+type GeminiCall = { ok: true; model: string; json: Record<string, unknown>; usage: Usage } | { ok: false; model: string; status: number; details: string };
 
 const redact = (s: string, key: string) => s.split(key).join("[redacted]").slice(0, 800);
 
 
 async function generate(apiKey: string, model: string, numbered: string): Promise<GeminiCall> {
-  const generationConfig: Record<string, unknown> = { responseMimeType: "application/json", responseSchema, temperature: 0, maxOutputTokens: 8192 };
+  const generationConfig: Record<string, unknown> = { responseMimeType: "application/json", responseSchema, temperature: 0, maxOutputTokens: MAX_OUTPUT_TOKENS };
   if (/^gemini-2\.5-flash/.test(model)) generationConfig["thinkingConfig"] = { thinkingBudget: 0 };
   const res = await fetch(`${API}/models/${encodeURIComponent(model)}:generateContent`, {
     method: "POST",
@@ -32,11 +33,13 @@ async function generate(apiKey: string, model: string, numbered: string): Promis
     return { ok: false, model, status: res.status, details: retryAfter ? `${details} (retry-after: ${retryAfter}s)` : details };
   }
   try {
-    const data = JSON.parse(body) as { candidates?: { finishReason?: string; content?: { parts?: { text?: string; thought?: boolean }[] } }[]; promptFeedback?: { blockReason?: string } };
+    const data = JSON.parse(body) as { candidates?: { finishReason?: string; content?: { parts?: { text?: string; thought?: boolean }[] } }[]; promptFeedback?: { blockReason?: string }; usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number } };
     const cand = data.candidates?.[0];
     const out = cand?.content?.parts?.filter(p => !p.thought).map(p => p.text ?? "").join("") ?? "";
     if (!out) return { ok: false, model, status: 200, details: `Empty response (finishReason: ${cand?.finishReason ?? "none"}, blockReason: ${data.promptFeedback?.blockReason ?? "none"})` };
-    return { ok: true, model, json: JSON.parse(out) as Record<string, unknown> };
+    const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+    const usage = { inputTokens: num(data.usageMetadata?.promptTokenCount), outputTokens: num(data.usageMetadata?.candidatesTokenCount) };
+    return { ok: true, model, json: JSON.parse(out) as Record<string, unknown>, usage };
   } catch (e) {
     console.error("Gemini parse error", model, body.slice(0, 500));
     return { ok: false, model, status: 200, details: `Could not parse Gemini JSON: ${e instanceof Error ? e.message : "unknown"}` };
@@ -130,11 +133,22 @@ export const Route = createFileRoute("/api/check-order")({
     handlers: {
       POST: async ({ request }) => {
         let text = "";
-        try { const body = (await request.json()) as { text?: unknown }; text = typeof body.text === "string" ? body.text : ""; } catch { return reject(); }
+        let visitorId: unknown = null;
+        try { const body = (await request.json()) as { text?: unknown; visitorId?: unknown }; text = typeof body.text === "string" ? body.text : ""; visitorId = body.visitorId; } catch { return reject(); }
         text = text.trim();
         if (!text || text.length > MAX_INPUT_CHARS || containsPersonalDetails(text)) return reject();
         const messages = parseConversation(text);
         if (messages.length < 2 || messages.length > MAX_MESSAGES || !messages.some(m => m.from === "customer") || !messages.some(m => m.from === "seller")) return reject();
+        if (!isVisitorId(visitorId)) return json({ ok: false, kind: "error", message: ERROR_MESSAGE }, 400);
+
+        // Server-side demo cap: only successful, stored analyses count. Fails closed if the count can't be read.
+        try {
+          const used = await countVisitorChecks(visitorId);
+          if (used >= VISITOR_CAP) return json({ ok: false, kind: "capped", message: CAP_MESSAGE }, 429);
+        } catch (e) {
+          console.error("visitor cap check failed", e instanceof Error ? e.message : "unknown");
+          return json({ ok: false, kind: "error", message: ERROR_MESSAGE }, 503);
+        }
 
         const apiKey = process.env["GEMINI_API_KEY"]?.trim();
         if (!apiKey) { console.error("GEMINI_API_KEY missing or empty"); return diag(500, "GEMINI_API_KEY is not configured on the server", 0, ""); }
@@ -151,7 +165,8 @@ export const Route = createFileRoute("/api/check-order")({
               console.error("Gemini unavailable after primary and fallback, model:", call.model, "details:", call.details);
               return json({ ok: false, kind: "error", message: BUSY_MESSAGE }, 503);
             }
-            return diag(502, "Gemini request failed", call.status, call.details, call.model);
+            console.error("Gemini request failed", call.model, call.status, call.details);
+            return json({ ok: false, kind: "error", message: ERROR_MESSAGE }, 502);
           }
           const raw = call.json;
           if (raw["is_custom_order_conversation"] === false) return reject();
@@ -161,6 +176,7 @@ export const Route = createFileRoute("/api/check-order")({
               input_text: text, result_json: result,
               agreed_count: result.agreed.length, open_count: result.open.length, missing_count: result.missing.length, change_count: result.changes.length,
               had_open_or_missing: result.open.length + result.missing.length > 0,
+              input_tokens: call.usage.inputTokens, output_tokens: call.usage.outputTokens, visitor_id: visitorId,
             });
           } catch (e) { console.error("logging failed", e); }
           return json({ ok: true, messages, result });
