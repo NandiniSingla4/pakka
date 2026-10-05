@@ -6,9 +6,9 @@ import {
 import { logInteraction } from "@/lib/pakka-supabase.server";
 
 const API = "https://generativelanguage.googleapis.com/v1beta";
-/** Preferred Flash models, tried in order; if none exist for the key, one is discovered via ListModels. */
-/** Flash models tried in order; gemini-flash-latest tracks the Flash model this key can actually use. */
-const PREFERRED_MODELS = ["gemini-flash-latest", "gemini-2.0-flash"];
+/** Pakka only needs lightweight structured extraction: Flash-Lite is primary, gemini-3.8-flash is the single 503 fallback. */
+const PRIMARY_MODEL = "gemini-3.5-flash-lite";
+const FALLBACK_MODEL = "gemini-3.8-flash";
 
 type GeminiCall = { ok: true; model: string; json: Record<string, unknown> } | { ok: false; model: string; status: number; details: string };
 
