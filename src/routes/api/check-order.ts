@@ -146,6 +146,11 @@ export const Route = createFileRoute("/api/check-order")({
               console.error("Gemini quota exceeded, model:", call.model, "details:", call.details);
               return json({ ok: false, kind: "error", message: QUOTA_MESSAGE }, 429);
             }
+            if (call.status === 503) {
+              // Both the primary model and the single fallback reported high demand.
+              console.error("Gemini unavailable after primary and fallback, model:", call.model, "details:", call.details);
+              return json({ ok: false, kind: "error", message: BUSY_MESSAGE }, 503);
+            }
             return diag(502, "Gemini request failed", call.status, call.details, call.model);
           }
           const raw = call.json;
