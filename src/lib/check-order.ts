@@ -8,10 +8,30 @@ export type LiveChange = { field: string; from: string; to: string; evidence: st
 export type LiveResult = { agreed: LiveField[]; open: LiveField[]; missing: LiveField[]; changes: LiveChange[] };
 export type CheckResponse =
   | { ok: true; messages: ParsedMessage[]; result: LiveResult }
-  | { ok: false; kind: "rejected" | "error"; message: string };
+  | { ok: false; kind: "rejected" | "error" | "capped"; message: string };
 
 export const REJECT_MESSAGE = "Pakka only analyses anonymised custom-order conversations. Please remove personal details and try again.";
 export const ERROR_MESSAGE = "We couldn’t check this order right now. Please try again.";
+export const CAP_MESSAGE = "You’ve reached the 5-order demo limit for now.";
+export const VISITOR_CAP = 5;
+export const MAX_OUTPUT_TOKENS = 500;
+
+const VISITOR_KEY = "pakka_visitor_id";
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const isVisitorId = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
+
+/** Random anonymous ID (crypto.randomUUID) kept in localStorage. Never derived from personal or device data. */
+export function getVisitorId(): string {
+  try {
+    const existing = localStorage.getItem(VISITOR_KEY);
+    if (isVisitorId(existing)) return existing;
+    const id = crypto.randomUUID();
+    localStorage.setItem(VISITOR_KEY, id);
+    return id;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
 
 const LINE = /^\s*(customer|buyer|client|seller|maker|me|artist)\s*[:\-]\s*(.*)$/i;
 

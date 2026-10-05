@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowUpRight, Check, ChevronRight, History, MessageCircle, Palette, Cake, Scissors, ScanSearch, X, Heart, Loader2, RotateCcw, ShieldCheck } from "lucide-react";
 import { sampleOrders, type ConversationMessage, type DemoField, type SampleOrder, type OrderStatus } from "@/lib/landing-content";
-import { ERROR_MESSAGE, MAX_INPUT_CHARS, type CheckResponse, type LiveResult, type ParsedMessage } from "@/lib/check-order";
+import { ERROR_MESSAGE, MAX_INPUT_CHARS, getVisitorId, type CheckResponse, type LiveResult, type ParsedMessage } from "@/lib/check-order";
 import { StatusBadge } from "./StatusBadge";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -125,7 +125,7 @@ export function OrderCheckDemo() {
     if (liveLoading) return;
     setLiveLoading(true); setLiveError(null);
     try {
-      const res = await fetch("/api/check-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: liveText }) });
+      const res = await fetch("/api/check-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: liveText, visitorId: getVisitorId() }) });
       const data = (await res.json().catch(() => null)) as CheckResponse | null;
       if (data?.ok) { setLiveOrder(toOrder(data.messages, data.result)); setReviewedByOrder(p => ({ ...p, live: [] })); resetSelection(); setStatsKey(k => k + 1); }
       else setLiveError(data?.message ?? ERROR_MESSAGE);
